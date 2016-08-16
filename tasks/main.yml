@@ -1,0 +1,63 @@
+---
+- name: set fact - git_path
+  set_fact:
+    git_path: "{{ git_dest }}"
+
+- name: set fact - git_url
+  set_fact:
+    git_url: "{{ project_git_url }}"
+
+- name: git clone repo
+  git: repo=ssh://{{ git_url }}
+       dest="{{ git_path }}"
+       version={{ git_branch }}
+       force=yes
+
+- name: get last git commit
+  shell: /usr/bin/env git rev-parse HEAD
+  args:
+    chdir: "{{ git_path }}"
+  register: last_commit_result
+
+- name: set fact - git_commit
+  set_fact:
+    git_commit: "{{ last_commit_result.stdout }}"
+
+# --- git_last_tag ---
+- block:
+    - name: get last git tag
+      shell: /usr/bin/env git describe --tags --abbrev=0
+      args:
+        chdir: "{{ git_path }}"
+      register: last_tag_result
+    - name: set fact - git_last_tag - from git
+      set_fact:
+        git_last_tag: "{{ last_tag_result.stdout }}"
+  rescue:
+    - name: set fact - git_last_tag - to empty string
+      set_fact:
+        git_last_tag: ""
+
+- name: get commits since last tag
+  shell: /usr/bin/env git log {{ git_last_tag }}..{{ git_commit }} --oneline
+  args:
+    chdir: "{{ git_path }}"
+  register: commits_since_last_tag_result
+  when: git_last_tag != ""
+
+- name: get commits (no last tag available)
+  shell: /usr/bin/env git log {{ git_commit }} --oneline
+  args:
+    chdir: "{{ git_path }}"
+  register: commits_result
+  when: git_last_tag == ""
+
+- name: set fact - git_commit_list - from commits since last tag
+  set_fact:
+    git_commit_list: "{{ commits_since_last_tag_result.stdout }}"
+  when: git_last_tag != ""
+
+- name: set fact - git_commit_list - from all commits (no last tag available)
+  set_fact:
+    git_commit_list: "{{ commits_result.stdout }}"
+  when: git_last_tag == ""
