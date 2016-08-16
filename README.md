@@ -1,5 +1,5 @@
-sib-git
-=======
+sib-clone-git-repo
+==================
 
 This role clones a remote git repo.
 
@@ -29,7 +29,7 @@ Pass in these values in the playbook:
 Dependencies
 ------------
 
-* git_branch - from role aikchar.sib-acta-env (when run before) or vars/main.yml
+* git_branch - from role aikchar.sib-synthesize-vars (when run before) or vars/main.yml
 
 Example Playbook
 ----------------
@@ -38,7 +38,7 @@ Including an example of how to use your role (for instance, with variables passe
 
     - hosts: servers
       roles:
-         - { role: aikchar.sib-git,
+         - { role: aikchar.sib-clone-git-repo,
              project_git_url: "git@example.com/project.git",
              git_dest: "/path/to/git/repo/clone" }
 
